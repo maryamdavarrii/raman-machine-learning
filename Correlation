@@ -1,0 +1,46 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import os
+
+
+# Load Data
+
+file_path = os.path.expanduser("EXCEL_ADDRESS")
+df = pd.read_excel(file_path, sheet_name="SHEET_NAME")
+
+
+# Calculate Correlation
+
+correlation_matrix = df.corr()
+
+
+# Create Upper-Triangle Mask
+
+mask = np.triu(
+    np.ones_like(correlation_matrix, dtype=bool),
+    k=1
+)
+
+
+# Plot Correlation Heatmap
+
+plt.figure(figsize=(12, 10))
+
+sns.heatmap(
+    correlation_matrix,
+    mask=mask,
+    annot=True,
+    fmt=".2f",
+    cmap="coolwarm",
+    linewidths=0.5,
+    cbar_kws={"shrink": 0.8},
+    square=True
+)
+
+plt.title("Correlation Heatmap", fontsize=16)
+plt.xticks(rotation=45, ha="right")
+plt.yticks(rotation=0)
+plt.tight_layout()
+plt.show()
