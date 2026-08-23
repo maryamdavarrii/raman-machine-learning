@@ -1,0 +1,226 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.cross_decomposition import PLSRegression
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+
+# =========================
+#  Load Data
+# =========================
+
+
+
+
+
+# =========================
+# Train-Test Split
+# =========================
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.20,
+    random_state=42,
+    stratify=y
+)
+
+
+# =========================
+# PLS-DA Model
+# =========================
+pls = PLSRegression(n_components=7)
+
+pls.fit(
+    X_train,
+    y_train
+)
+
+
+# =========================
+# Predictions
+# =========================
+y_train_pred = np.argmax(
+    pls.predict(X_train_scaled),
+    axis=1
+)
+
+y_test_pred = np.argmax(
+    pls.predict(X_test_scaled),
+    axis=1
+)
+
+
+# =========================
+# Model Performance
+# =========================
+print(
+    "\nTrain Accuracy:",
+    accuracy_score(y_train, y_train_pred)
+)
+
+print(
+    "Test Accuracy:",
+    accuracy_score(y_test, y_test_pred)
+)
+
+
+print("\nConfusion Matrix:")
+print(
+    confusion_matrix(
+        y_test,
+        y_test_pred
+    )
+)
+
+
+print("\nClassification Report:")
+print(
+    classification_report(
+        y_test,
+        y_test_pred,
+        target_names=le.classes_
+    )
+)
+
+
+# =========================
+# PLS Scores
+# =========================
+X_train_scores = pls.x_scores_
+X_test_scores = pls.transform(X_test_scaled)
+
+
+# =========================
+# Confidence Ellipse
+# =========================
+def plot_confidence_ellipse(
+    ax,
+    data,
+    n_std=2.0,
+    **kwargs
+):
+    cov = np.cov(
+        data,
+        rowvar=False
+    )
+
+    mean = np.mean(
+        data,
+        axis=0
+    )
+
+    vals, vecs = np.linalg.eigh(cov)
+
+    order = vals.argsort()[::-1]
+
+    vals = vals[order]
+    vecs = vecs[:, order]
+
+    width, height = (
+        2 * n_std * np.sqrt(vals)
+    )
+
+    angle = np.degrees(
+        np.arctan2(
+            *vecs[:, 0][::-1]
+        )
+    )
+
+    ellipse = Ellipse(
+        xy=mean,
+        width=width,
+        height=height,
+        angle=angle,
+        fill=False,
+        **kwargs
+    )
+
+    ax.add_patch(ellipse)
+
+
+# =========================
+# PLS-DA Score Plot
+# =========================
+colors = [
+    "red",
+    "green",
+    "blue",
+    "orange",
+    "purple",
+    "cyan"
+]
+
+train_marker = "o"
+test_marker = "s"
+
+plt.figure(
+    figsize=(9, 7)
+)
+
+ax = plt.gca()
+
+
+for i, cls in enumerate(le.classes_):
+
+    cls_id = le.transform([cls])[0]
+
+    train_mask = y_train == cls_id
+    test_mask = y_test == cls_id
+
+    # Train points
+    ax.scatter(
+        X_train_scores[train_mask, 0],
+        X_train_scores[train_mask, 1],
+        color=colors[i % len(colors)],
+        marker=train_marker,
+        label=f"{cls} (train)",
+        alpha=0.7
+    )
+
+    # Test points
+    ax.scatter(
+        X_test_scores[test_mask, 0],
+        X_test_scores[test_mask, 1],
+        color=colors[i % len(colors)],
+        marker=test_marker,
+        label=f"{cls} (test)",
+        alpha=0.9
+    )
+
+    # Confidence ellipse based on training data
+    plot_confidence_ellipse(
+        ax,
+        X_train_scores[
+            train_mask, :2
+        ],
+        edgecolor=colors[
+            i % len(colors)
+        ],
+        linewidth=2
+    )
+
+
+ax.set_xlabel(
+    "PLS Component 1"
+)
+
+ax.set_ylabel(
+    "PLS Component 2"
+)
+
+ax.set_title(
+    "PLS-DA Score Plot"
+)
+
+ax.legend(
+    fontsize=8
+)
+
+ax.grid(True)
+
+plt.tight_layout()
+plt.show()
