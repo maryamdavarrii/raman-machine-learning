@@ -1,0 +1,162 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import (
+    train_test_split,
+    StratifiedKFold,
+    cross_val_score,
+    cross_val_predict
+)
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.decomposition import PCA
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix
+)
+from sklearn.svm import SVC
+
+
+# ==============================
+#  Load data
+# ==============================
+
+
+
+
+# ==============================
+#  Train-Test Split
+# ==============================
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y
+)
+
+
+# ==============================
+#  Standardization
+# ==============================
+scaler = StandardScaler()
+
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+
+# ==============================
+#  PCA (retain 95% variance)
+# ==============================
+pca = PCA(n_components=0.95)
+
+X_train_pca = pca.fit_transform(X_train_scaled)
+X_test_pca = pca.transform(X_test_scaled)
+
+print(f"PCA Components used: {pca.n_components_}")
+
+
+# ==============================
+# SVM Classification
+# ==============================
+svm = SVC(
+    kernel="rbf",
+    C=1,
+    gamma="scale"
+)
+
+svm.fit(X_train_pca, y_train)
+
+
+# ==============================
+# Predictions
+# ==============================
+y_train_pred = svm.predict(X_train_pca)
+y_test_pred = svm.predict(X_test_pca)
+
+
+# ==============================
+# Overall Accuracy
+# ==============================
+train_acc = accuracy_score(y_train, y_train_pred)
+test_acc = accuracy_score(y_test, y_test_pred)
+
+print(f"\nTotal Train Accuracy: {train_acc:.4f}")
+print(f"Total Test Accuracy: {test_acc:.4f}")
+
+
+# ==============================
+#  Classification Report
+# ==============================
+print("\nClassification Report (Train):")
+print(
+    classification_report(
+        y_train,
+        y_train_pred,
+        target_names=class_names
+    )
+)
+
+print("\nClassification Report (Test):")
+print(
+    classification_report(
+        y_test,
+        y_test_pred,
+        target_names=class_names
+    )
+)
+
+
+# ==============================
+#  Accuracy per Group
+# ==============================
+print("\nTrain Accuracy per Group:")
+
+for i, cls in enumerate(class_names):
+    idx = y_train == i
+    acc = accuracy_score(
+        y_train[idx],
+        y_train_pred[idx]
+    )
+    print(f"{cls}: {acc:.4f}")
+
+
+print("\nTest Accuracy per Group:")
+
+for i, cls in enumerate(class_names):
+    idx = y_test == i
+    acc = accuracy_score(
+        y_test[idx],
+        y_test_pred[idx]
+    )
+    print(f"{cls}: {acc:.4f}")
+
+
+# ==============================
+#  Confusion Matrix
+# ==============================
+cm = confusion_matrix(
+    y_test,
+    y_test_pred
+)
+
+plt.figure(figsize=(8, 6))
+
+sns.heatmap(
+    cm,
+    annot=True,
+    fmt="d",
+    cmap="Blues",
+    xticklabels=class_names,
+    yticklabels=class_names
+)
+
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix (Test Data)")
+plt.tight_layout()
+plt.show()
+
+
