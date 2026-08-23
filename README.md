@@ -5,10 +5,9 @@
 This project presents Python-based analysis of Raman spectroscopy data.
 
 ## Methods
-- Data preprocessing
-- Standardization
-- PCA
-- K-means clustering
+- PCA-lda
+- plsda
+- pca-svm
 - Machine learning
 - Data visualization
 
